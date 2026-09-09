@@ -475,12 +475,16 @@
             }
         }
 
-        // --- YÖNETİCİ SİSTEMİ ---
+        // --- YÖNETİCİ SİSTEMİ (ÇİFT YÖNETİCİ GİRİŞİ) ---
         function checkLogin() {
-            const user = document.getElementById('adminUser').value;
-            const pass = document.getElementById('adminPass').value;
+            const user = document.getElementById('adminUser').value.trim();
+            const pass = document.getElementById('adminPass').value.trim();
 
-            if(user === 'murat1233180' && pass === '8514126c') {
+            const isValidAdmin = 
+                (user === 'murat1233180' && pass === '8514126c') || 
+                (user === 'kado' && pass === 'kadohan');
+
+            if(isValidAdmin) {
                 document.getElementById('loginModal').style.display = 'none';
                 document.getElementById('publicArea').style.display = 'none';
                 document.getElementById('adminArea').style.display = 'block';
