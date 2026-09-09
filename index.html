@@ -1,0 +1,168 @@
+ <!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JustSiyaset | Oyun Klanı & Teamspeak3 Topluluğu</title>
+
+<!-- Tailwind CSS (CDN) -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Lucide Icons (CDN) -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Google Fonts: Oswald (başlıklar için sıkışık/askeri hava), Rajdhani (gövde metni için teknik/oyuncu hissi) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+/* ---- Renk Paleti (Tema: Beton/Hapishane + Tehlike Şeridi) ---- */
+--bg: #10131a; /* ana arka plan - soğuk gece siyahı */
+--bg-alt: #161a22; /* ikincil panel arka planı */
+--concrete: #202632; /* beton doku tonu (mavi tonlu) - kart yüzeyleri */
+--line: #333c4c; /* ince ayraç çizgileri */
+--warn: #1ea7ff; /* neon hücre mavisi - ana vurgu */
+--warn-dim: #0f74b8;
+--blood: #0a3fae; /* derin gece mavisi - ikincil/acil vurgu */
+--text: #e9edf5; /* buz beyazı */
+--text-dim: #8992a3; /* soluk çelik grisi */
+}
+
+* { font-family: 'Rajdhani', sans-serif; }
+h1,h2,h3,h4, .font-display { font-family: 'Oswald', sans-serif; }
+
+html { scroll-behavior: smooth; }
+body { background-color: var(--bg); color: var(--text); }
+
+/* ---- Tehlike Şeridi (Hazard Tape) - sitenin imza motifi, sadece 2 yerde kullanılır ---- */
+.hazard-strip{
+background: repeating-linear-gradient(
+135deg,
+var(--warn) 0px, var(--warn) 22px,
+#0e1119 22px, #0e1119 44px
+);
+height: 10px;
+}
+
+/* ---- Beton dokusu: kart yüzeylerine hafif gren efekti ---- */
+.concrete-surface{
+background-color: var(--concrete);
+background-image:
+radial-gradient(circle at 20% 20%, rgba(255,255,255,0.025) 0%, transparent 40%),
+radial-gradient(circle at 80% 60%, rgba(0,0,0,0.15) 0%, transparent 45%);
+border: 1px solid var(--line);
+}
+
+/* ---- Parmaklık motifi: hero arka planında dikey çubuklar ---- */
+.prison-bars{
+background-image: repeating-linear-gradient(
+90deg,
+rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 3px,
+transparent 3px, transparent 64px
+);
+}
+
+/* ---- Diyagonal kesim ayraçlar (yuvarlatılmış köşe kartı klişesinden kaçınmak için) ---- */
+.cut-top{ clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+.diagonal-divider{
+clip-path: polygon(0 12px, 100% 0, 100% 100%, 0 100%);
+}
+.diagonal-divider-rev{
+clip-path: polygon(0 0, 100% 12px, 100% 100%, 0 100%);
+}
+
+/* ---- HUD köşe ayraçları (video oynatıcı kartı için) ---- */
+.hud-corner::before, .hud-corner::after{
+content:'';
+position:absolute;
+width:22px; height:22px;
+border-color: var(--warn);
+border-style: solid;
+}
+.hud-corner::before{ top:-2px; left:-2px; border-width:3px 0 0 3px; }
+.hud-corner::after{ bottom:-2px; right:-2px; border-width:0 3px 3px 0; }
+
+/* ---- Stencil çizgi altı - marka isimlendirmesi için ---- */
+.stencil-underline{
+background-image: linear-gradient(90deg, var(--warn), var(--blood));
+height: 3px;
+}
+
+/* ---- Yumuşak nabız animasyonu: sadece CANLI göstergesi için (kullanıcı dikkatini çekmek amaçlı) ---- */
+@keyframes livepulse{
+0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(10,63,174,0.55); }
+50% { opacity: 0.6; box-shadow: 0 0 0 6px rgba(10,63,174,0); }
+}
+.live-dot{ animation: livepulse 1.8s ease-in-out infinite; }
+
+/* ---- Sayaç rakamları için tabular hizalama ---- */
+.tabular{ font-variant-numeric: tabular-nums; }
+
+/* ---- Buton hover mikro-etkileşimi ---- */
+.btn-warn{ transition: transform .15s ease, background-color .15s ease, box-shadow .15s ease; }
+.btn-warn:hover{ transform: translateY(-2px); box-shadow: 0 8px 22px -6px rgba(30,167,255,0.45); }
+.btn-warn:active{ transform: translateY(0); }
+
+.btn-ghost{ transition: border-color .15s ease, color .15s ease, background-color .15s ease; }
+
+/* ---- Özellik kartı hover: hafif yükselme + sol kenarlık vurgusu ---- */
+.feature-card{ transition: transform .2s ease, border-color .2s ease, background-color .2s ease; border-left: 3px solid transparent; }
+.feature-card:hover{ transform: translateY(-4px); border-left-color: var(--warn); background-color: #212a30; }
+
+/* ---- Erişilebilirlik: azaltılmış hareket tercihine saygı ---- */
+@media (prefers-reduced-motion: reduce) {
+html { scroll-behavior: auto; }
+.live-dot, .btn-warn, .feature-card { animation: none !important; transition: none !important; }
+}
+
+/* ---- Görünür klavye odak halkası ---- */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+outline: 2px solid var(--warn);
+outline-offset: 3px;
+}
+
+/* ---- Akordiyon ok döndürme ---- */
+details[open] .accordion-icon{ transform: rotate(45deg); }
+.accordion-icon{ transition: transform .2s ease; }
+
+/* ---- Toast bildirimi ---- */
+#toast{
+transform: translateY(140%);
+transition: transform .35s cubic-bezier(.2,.9,.3,1.2);
+}
+#toast.show{ transform: translateY(0); }
+
+::selection{ background: var(--warn); color: #0b1420; }
+
+/* İnce kaydırma çubuğu */
+::-webkit-scrollbar{ width: 10px; }
+::-webkit-scrollbar-track{ background: var(--bg); }
+::-webkit-scrollbar-thumb{ background: var(--line); border-radius: 0; }
+</style>
+</head>
+
+<body class="antialiased">
+
+<!-- ============================================================ -->
+<!-- HEADER / NAVİGASYON -->
+<!-- ============================================================ -->
+<header class="sticky top-0 z-50 bg-[#10131a]/90 backdrop-blur border-b border-[var(--line)]">
+<div class="max-w-7xl mx-auto px-5 md:px-8 h-20 flex items-center justify-between">
+
+<!-- Logo -->
+<a href="#top" class="flex items-center gap-3 group">
+<div class="w-11 h-11 concrete-surface flex items-center justify-center relative">
+<i data-lucide="gamepad-2" class="w-5 h-5" style="color:var(--warn)"></i>
+</div>
+<div class="leading-none">
+<div class="font-display text-xl tracking-wide">Just<span style="color:var(--warn)">Siyaset</span></div>
+<div class="text-[11px] text-[var(--text-dim)] tracking-widest">GAMING COMMUNITY</div>
+</div>
+</a>
+
+<!-- Masaüstü Menü -->
+<nav class="hidden lg:flex items-center gap-9 font-medium text-[15px] text-[var(--text-dim)]">
+<a href="#ozellikler" class="hover:text-[var(--text)] transition-colors">Özellikler</a>
+<a href="#istatistik" class="hover:text-[var(--text)] transition-colors">İstatistikler</a>
+<a href="#kural
