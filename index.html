@@ -95,6 +95,10 @@
         
         footer { text-align: center; padding: 25px; background: #0b0e14; color: #567; font-size: 13px; margin-top: 50px; border-top: 1px solid #1c2331; }
     </style>
+
+    <!-- FIREBASE KÜTÜPHANELERİ -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -110,19 +114,17 @@
         </div>
     </nav>
 
-    <!-- ANA EKRAN (GIF ARKA PLAN, IP KUTULARI) -->
+    <!-- ANA EKRAN -->
     <div class="hero">
         <h1>JUSTSİYASET GAMING</h1>
         <p>CS 1.6 Jailbreak Sunucusu - Kuralsızların Tek Adresi</p>
         
         <!-- YAN YANA ÜÇ SUNUCU KUTUSU -->
         <div class="servers-wrapper">
-            
             <!-- SUNUCU 1 (105) -->
             <div class="ip-box">
                 <span style="color: #9ab; font-size: 12px; display: block; margin-bottom: 2px;">SUNUCU IP ADRESİ</span>
                 <h2>95.173.173.105</h2>
-                
                 <div class="player-status-container">
                     <div class="player-status-header">
                         <h3>🟢 Aktif Oyuncular (<span id="count_105">0</span>/32)</h3>
@@ -139,7 +141,6 @@
             <div class="ip-box">
                 <span style="color: #9ab; font-size: 12px; display: block; margin-bottom: 2px;">SUNUCU IP ADRESİ</span>
                 <h2>95.173.173.14</h2>
-                
                 <div class="player-status-container">
                     <div class="player-status-header">
                         <h3>🟢 Aktif Oyuncular (<span id="count_14">0</span>/32)</h3>
@@ -156,7 +157,6 @@
             <div class="ip-box">
                 <span style="color: #9ab; font-size: 12px; display: block; margin-bottom: 2px;">SUNUCU IP ADRESİ</span>
                 <h2>95.173.173.117</h2>
-                
                 <div class="player-status-container">
                     <div class="player-status-header">
                         <h3>🟢 Aktif Oyuncular (<span id="count_117">0</span>/32)</h3>
@@ -168,10 +168,8 @@
                     <button class="btn btn-copy" onclick="copyIp('95.173.173.117')">📋 Kopyala</button>
                 </div>
             </div>
-
         </div>
 
-        <!-- GENEL İLETİŞİM VE PANEL BUTONLARI -->
         <div class="buttons">
             <a href="ts3server://95.173.173.105" class="btn btn-ts3">🎧 TS3 Bağlan</a>
             <a href="https://instagram.com/leqacyclan" target="_blank" class="btn btn-ig">📸 Instagram</a>
@@ -179,12 +177,10 @@
         </div>
     </div>
 
-    <!-- ETKİNLİK TAKVİMİ BÖLÜMÜ -->
+    <!-- ETKİNLİK TAKVİMİ -->
     <div class="container" id="events">
         <h2 class="section-title">HAFTALIK ETKİNLİK TAKVİMİ</h2>
-        <div class="events-grid" id="publicEventsGrid">
-            <!-- Etkinlikler JavaScript ile dinamik olarak doldurulur -->
-        </div>
+        <div class="events-grid" id="publicEventsGrid"></div>
     </div>
 
     <!-- TARİHÇE -->
@@ -252,7 +248,7 @@
                 </div>
 
                 <div class="input-group">
-                    <label>Açıklama / Detay (Örn: Paralı Ödül, Kurallar)</label>
+                    <label>Açıklama / Detay</label>
                     <input type="text" id="admEvDesc" placeholder="Örn: Katılanlara TS3 yetkisi ve nakit ödüllü isyan oyunu.">
                 </div>
 
@@ -263,7 +259,7 @@
             </div>
 
             <!-- GELEN ŞİKAYETLER -->
-            <h3 style="color: #00a8ff; font-family: 'Teko', sans-serif; font-size: 28px; margin-bottom: 10px;">GELEN ŞİKAYETLER</h3>
+            <h3 style="color: #00a8ff; font-family: 'Teko', sans-serif; font-size: 28px; margin-bottom: 10px;">GELEN ŞİKAYETLER (BULUT ORTAK HAVUZ)</h3>
             <div id="complaintsList"></div>
         </div>
     </div>
@@ -288,7 +284,65 @@
     </footer>
 
     <script>
-        // --- 1. DAKİKALIK OTOMATİK VERİ ÇEKME SİSTEMİ ---
+        // ================= FIREBASE AYARLARI =================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBh5_pUr2jd0TAPthsr2-sNm3D1RJLB-4U",
+            authDomain: "siyasetweb.firebaseapp.com",
+            databaseURL: "https://siyasetweb-default-rtdb.firebaseio.com",
+            projectId: "siyasetweb",
+            storageBucket: "siyasetweb.firebasestorage.app",
+            messagingSenderId: "931082534512",
+            appId: "1:931082534512:web:853156d1fdc28ec1263eb5",
+            measurementId: "G-WNTPYW2JV5"
+        };
+
+        // Firebase başlatma
+        let db = null;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+        } catch(e) {
+            console.error("Firebase başlatma hatası:", e);
+        }
+
+        // Canlı Bulut Değişkenleri
+        let cloudComplaints = [];
+        let cloudEvents = [];
+
+        // Varsayılan Etkinlikler (Eğer veritabanı henüz boşsa açılış için)
+        const DEFAULT_EVENTS = [
+            { type: "Hafta Sonu", title: "Resmi Klan Toplantısı", time: "Cumartesi & Pazar | 20:30", desc: "TS3 adresinde genel durum değerlendirmesi, klan içi terfiler ve yetki dağıtımı." },
+            { type: "Hafta Sonu", title: "Nakit / Paralı JB Etkinliği", time: "Cumartesi & Pazar | 21:30", desc: "Ödüllü isyan ve oyun gecesi! Kazanan takıma ve koruma ekibine nakit para & yetki ödülü." },
+            { type: "Hafta İçi", title: "Gece İsyan & Komut Eğlencesi", time: "Pazartesi - Cuma | 21:00 - 23:00", desc: "Tüm slot ve adminlerin katılımıyla kesintisiz JB maçları ve isyan turnuvaları." }
+        ];
+
+        if (db) {
+            // Şikayetleri dinle
+            db.ref('complaints').on('value', snapshot => {
+                cloudComplaints = [];
+                snapshot.forEach(child => {
+                    cloudComplaints.push({ id: child.key, ...child.val() });
+                });
+                renderComplaints();
+            });
+
+            // Etkinlikleri dinle
+            db.ref('events').on('value', snapshot => {
+                cloudEvents = [];
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        cloudEvents.push({ id: child.key, ...child.val() });
+                    });
+                } else {
+                    // Veritabanı boşsa varsayılanları aktar
+                    DEFAULT_EVENTS.forEach(ev => db.ref('events').push(ev));
+                }
+                renderPublicEvents();
+                renderAdminEvents();
+            });
+        }
+
+        // --- SUNUCU VERİLERİ (1 DAKİKALIK OTOMATİK GÜNCELLEME) ---
         const servers = {
             "105": { ip: "95.173.173.105", countId: "count_105", listId: "list_105" },
             "14":  { ip: "95.173.173.14",  countId: "count_14",  listId: "list_14" },
@@ -311,45 +365,93 @@
             });
         }
 
-        // --- ETKİNLİK SİSTEMİ (YÖNETİCİ DÜZENLEMELİ & LOKAL DEPOLAMALI) ---
-        const DEFAULT_EVENTS = [
-            {
-                id: 1,
-                type: "Hafta Sonu",
-                title: "Resmi Klan Toplantısı",
-                time: "Cumartesi & Pazar | 20:30",
-                desc: "TS3 adresinde genel durum değerlendirmesi, klan içi terfiler ve yetki dağıtımı."
-            },
-            {
-                id: 2,
-                type: "Hafta Sonu",
-                title: "Nakit / Paralı JB Etkinliği",
-                time: "Cumartesi & Pazar | 21:30",
-                desc: "Ödüllü isyan ve oyun gecesi! Kazanan takıma ve koruma ekibine nakit para & yetki ödülü."
-            },
-            {
-                id: 3,
-                type: "Hafta İçi",
-                title: "Gece İsyan & Komut Eğlencesi",
-                time: "Pazartesi - Cuma | 21:00 - 23:00",
-                desc: "Tüm slot ve adminlerin katılımıyla kesintisiz JB maçları ve isyan turnuvaları."
-            }
-        ];
+        window.onload = function() {
+            fetchLiveServerData();
+            setInterval(fetchLiveServerData, 60000); 
+        };
 
-        let eventsData = [];
-        try {
-            const savedEvents = localStorage.getItem('justSiyasetEvents');
-            eventsData = savedEvents ? JSON.parse(savedEvents) : DEFAULT_EVENTS;
-        } catch(e) {
-            eventsData = DEFAULT_EVENTS;
+        function copyIp(ipAddress) {
+            navigator.clipboard.writeText(ipAddress);
+            alert("IP Adresi Kopyalandı: " + ipAddress + "\nOyuna girip konsola 'connect " + ipAddress + "' yazarak bağlanabilirsiniz.");
         }
 
+        // --- ŞİKAYET YAZMA ---
+        function submitComplaint() {
+            const name = document.getElementById('compName').value.trim();
+            const subject = document.getElementById('compSubject').value.trim();
+            const text = document.getElementById('compText').value.trim();
+
+            if(name === '' || subject === '' || text === '') {
+                return alert("Lütfen tüm alanları eksiksiz doldurun!");
+            }
+
+            const payload = {
+                name: name,
+                subject: subject,
+                text: text,
+                date: new Date().toLocaleString('tr-TR')
+            };
+
+            if (db) {
+                db.ref('complaints').push(payload)
+                    .then(() => {
+                        document.getElementById('compName').value = '';
+                        document.getElementById('compSubject').value = '';
+                        document.getElementById('compText').value = '';
+                        alert("Şikayetiniz ortak veritabanına iletildi! Tüm yöneticiler canlı olarak görebilir.");
+                    })
+                    .catch(err => alert("Hata oluştu: " + err.message));
+            }
+        }
+
+        // --- ETKİNLİK EKLEME & SİLME ---
+        function addNewEvent() {
+            const type = document.getElementById('admEvType').value;
+            const title = document.getElementById('admEvTitle').value.trim();
+            const time = document.getElementById('admEvTime').value.trim();
+            const desc = document.getElementById('admEvDesc').value.trim();
+
+            if(!title || !time || !desc) {
+                return alert("Lütfen tüm alanları eksiksiz doldurun!");
+            }
+
+            const payload = { type, title, time, desc };
+
+            if (db) {
+                db.ref('events').push(payload)
+                    .then(() => {
+                        document.getElementById('admEvTitle').value = '';
+                        document.getElementById('admEvTime').value = '';
+                        document.getElementById('admEvDesc').value = '';
+                        alert("Etkinlik ortak takvime başarıyla eklendi!");
+                    });
+            }
+        }
+
+        function deleteEvent(firebaseKey) {
+            if(confirm("Bu etkinliği takvimden silmek istediğinize emin misiniz?")) {
+                if (db) db.ref('events').child(firebaseKey).remove();
+            }
+        }
+
+        function deleteComplaint(firebaseKey) {
+            if(confirm("Bu şikayeti silmek istediğinize emin misiniz?")) {
+                if (db) db.ref('complaints').child(firebaseKey).remove();
+            }
+        }
+
+        // --- EKRANA ÇİZME İŞLEMLERİ ---
         function renderPublicEvents() {
             const container = document.getElementById('publicEventsGrid');
             if(!container) return;
             container.innerHTML = '';
 
-            eventsData.forEach(ev => {
+            if (cloudEvents.length === 0) {
+                container.innerHTML = '<p style="color: #9ab; font-style: italic;">Şu anda duyurulmuş bir etkinlik bulunmuyor.</p>';
+                return;
+            }
+
+            cloudEvents.forEach(ev => {
                 const isWeekend = ev.type === "Hafta Sonu";
                 const card = document.createElement('div');
                 card.className = `event-card ${isWeekend ? 'weekend' : ''}`;
@@ -368,7 +470,7 @@
             if(!list) return;
             list.innerHTML = '';
 
-            eventsData.forEach(ev => {
+            cloudEvents.forEach(ev => {
                 const item = document.createElement('div');
                 item.style.cssText = "background: #0b0e14; padding: 12px; border-radius: 5px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1c2331;";
                 item.innerHTML = `
@@ -377,105 +479,39 @@
                         <div style="font-size: 12px; color: #ffbc00;">Saat: ${ev.time}</div>
                         <div style="font-size: 12px; color: #89a;">${ev.desc}</div>
                     </div>
-                    <button onclick="deleteEvent(${ev.id})" style="background:#dc2743; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:600;">Sil</button>
+                    <button onclick="deleteEvent('${ev.id}')" style="background:#dc2743; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:600;">Sil</button>
                 `;
                 list.appendChild(item);
             });
         }
 
-        function addNewEvent() {
-            const type = document.getElementById('admEvType').value;
-            const title = document.getElementById('admEvTitle').value.trim();
-            const time = document.getElementById('admEvTime').value.trim();
-            const desc = document.getElementById('admEvDesc').value.trim();
+        function renderComplaints() {
+            const list = document.getElementById('complaintsList');
+            if (!list) return;
+            list.innerHTML = '';
 
-            if(!title || !time || !desc) {
-                return alert("Lütfen etkinlik başlığı, saat ve açıklama alanlarını doldurun!");
+            if(cloudComplaints.length === 0) {
+                list.innerHTML = '<p style="color: #9ab; font-style: italic;">Sistemde okunmamış şikayet bulunmuyor.</p>';
+                return;
             }
 
-            const newEv = {
-                id: Date.now(),
-                type: type,
-                title: title,
-                time: time,
-                desc: desc
-            };
-
-            eventsData.push(newEv);
-            localStorage.setItem('justSiyasetEvents', JSON.stringify(eventsData));
-
-            document.getElementById('admEvTitle').value = '';
-            document.getElementById('admEvTime').value = '';
-            document.getElementById('admEvDesc').value = '';
-
-            renderPublicEvents();
-            renderAdminEvents();
-            alert("Yeni etkinlik başarıyla eklendi ve takvim güncellendi!");
+            const sorted = [...cloudComplaints].reverse(); 
+            sorted.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'complaint-card';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h4 style="color: #00a8ff;">Oyuncu: ${c.name}</h4>
+                        <button onclick="deleteComplaint('${c.id}')" style="background:#1c2331; color:#fff; border:1px solid #00a8ff; padding:5px 10px; border-radius:3px; cursor:pointer;">Sil</button>
+                    </div>
+                    <span style="display: block; margin-bottom: 10px;">Konu: <b>${c.subject}</b> | Tarih: ${c.date}</span>
+                    <p style="background: #0b0e14; padding: 10px; border-radius: 4px; border: 1px solid #1c2331;">"${c.text}"</p>
+                `;
+                list.appendChild(card);
+            });
         }
 
-        function deleteEvent(id) {
-            if(confirm("Bu etkinliği takvimden silmek istediğinize emin misiniz?")) {
-                eventsData = eventsData.filter(e => e.id !== id);
-                localStorage.setItem('justSiyasetEvents', JSON.stringify(eventsData));
-                renderPublicEvents();
-                renderAdminEvents();
-            }
-        }
-
-        // --- SAYFA AÇILIŞI ---
-        window.onload = function() {
-            fetchLiveServerData();
-            setInterval(fetchLiveServerData, 60000); 
-            renderPublicEvents();
-        };
-
-        // --- IP KOPYALAMA ---
-        function copyIp(ipAddress) {
-            navigator.clipboard.writeText(ipAddress);
-            alert("IP Adresi Kopyalandı: " + ipAddress + "\nOyuna girip konsola 'connect " + ipAddress + "' yazarak bağlanabilirsiniz.");
-        }
-
-        // --- ŞİKAYET SİSTEMİ (LOKAL KAYITLI) ---
-        let complaints = [];
-        try {
-            const saved = localStorage.getItem('justSiyasetComp');
-            if(saved) complaints = JSON.parse(saved);
-        } catch(e) {
-            console.error("Veri okuma hatası", e);
-        }
-
-        function submitComplaint() {
-            const name = document.getElementById('compName').value.trim();
-            const subject = document.getElementById('compSubject').value.trim();
-            const text = document.getElementById('compText').value.trim();
-
-            if(name === '' || subject === '' || text === '') {
-                return alert("Lütfen tüm alanları eksiksiz doldurun!");
-            }
-
-            const newComp = {
-                id: Date.now(),
-                name: name,
-                subject: subject,
-                text: text,
-                date: new Date().toLocaleString('tr-TR')
-            };
-
-            complaints.push(newComp);
-            localStorage.setItem('justSiyasetComp', JSON.stringify(complaints));
-            
-            document.getElementById('compName').value = '';
-            document.getElementById('compSubject').value = '';
-            document.getElementById('compText').value = '';
-            
-            alert("Şikayetiniz başarıyla sisteme kaydedildi! Sadece yöneticiler görebilir.");
-            
-            if (document.getElementById('adminArea').style.display === 'block') {
-                renderComplaints();
-            }
-        }
-
-        // --- YÖNETİCİ SİSTEMİ (ÇİFT YÖNETİCİ GİRİŞİ) ---
+        // --- YÖNETİCİ GİRİŞİ ---
         function checkLogin() {
             const user = document.getElementById('adminUser').value.trim();
             const pass = document.getElementById('adminPass').value.trim();
@@ -502,39 +538,6 @@
         function logoutAdmin() {
             document.getElementById('adminArea').style.display = 'none';
             document.getElementById('publicArea').style.display = 'block';
-        }
-
-        function renderComplaints() {
-            const list = document.getElementById('complaintsList');
-            list.innerHTML = '';
-
-            if(complaints.length === 0) {
-                list.innerHTML = '<p style="color: #9ab; font-style: italic;">Sistemde okunmamış şikayet bulunmuyor.</p>';
-                return;
-            }
-
-            const sorted = [...complaints].reverse(); 
-            sorted.forEach(c => {
-                const card = document.createElement('div');
-                card.className = 'complaint-card';
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h4 style="color: #00a8ff;">Oyuncu: ${c.name}</h4>
-                        <button onclick="deleteComplaint(${c.id})" style="background:#1c2331; color:#fff; border:1px solid #00a8ff; padding:5px 10px; border-radius:3px; cursor:pointer;">Sil</button>
-                    </div>
-                    <span style="display: block; margin-bottom: 10px;">Konu: <b>${c.subject}</b> | Tarih: ${c.date}</span>
-                    <p style="background: #0b0e14; padding: 10px; border-radius: 4px; border: 1px solid #1c2331;">"${c.text}"</p>
-                `;
-                list.appendChild(card);
-            });
-        }
-
-        function deleteComplaint(id) {
-            if(confirm("Bu şikayeti silmek istediğinize emin misiniz?")) {
-                complaints = complaints.filter(c => c.id !== id);
-                localStorage.setItem('justSiyasetComp', JSON.stringify(complaints));
-                renderComplaints(); 
-            }
         }
     </script>
 </body>
