@@ -159,7 +159,7 @@
                 <h2>95.173.173.117</h2>
                 <div class="player-status-container">
                     <div class="player-status-header">
-                        <h3>🟢 Aktif Oyuncular (<span id="count_117">0</span>/32)</h3>
+                        <h3>🟢 Aktif Oyuncular (<span id="count_117">6</span>/32)</h3>
                     </div>
                     <div class="player-grid" id="list_117"></div>
                 </div>
@@ -296,7 +296,6 @@
             measurementId: "G-WNTPYW2JV5"
         };
 
-        // Firebase başlatma
         let db = null;
         try {
             firebase.initializeApp(firebaseConfig);
@@ -305,11 +304,9 @@
             console.error("Firebase başlatma hatası:", e);
         }
 
-        // Canlı Bulut Değişkenleri
         let cloudComplaints = [];
         let cloudEvents = [];
 
-        // Varsayılan Etkinlikler (Eğer veritabanı henüz boşsa açılış için)
         const DEFAULT_EVENTS = [
             { type: "Hafta Sonu", title: "Resmi Klan Toplantısı", time: "Cumartesi & Pazar | 20:30", desc: "TS3 adresinde genel durum değerlendirmesi, klan içi terfiler ve yetki dağıtımı." },
             { type: "Hafta Sonu", title: "Nakit / Paralı JB Etkinliği", time: "Cumartesi & Pazar | 21:30", desc: "Ödüllü isyan ve oyun gecesi! Kazanan takıma ve koruma ekibine nakit para & yetki ödülü." },
@@ -317,7 +314,6 @@
         ];
 
         if (db) {
-            // Şikayetleri dinle
             db.ref('complaints').on('value', snapshot => {
                 cloudComplaints = [];
                 snapshot.forEach(child => {
@@ -326,7 +322,6 @@
                 renderComplaints();
             });
 
-            // Etkinlikleri dinle
             db.ref('events').on('value', snapshot => {
                 cloudEvents = [];
                 if (snapshot.exists()) {
@@ -334,7 +329,6 @@
                         cloudEvents.push({ id: child.key, ...child.val() });
                     });
                 } else {
-                    // Veritabanı boşsa varsayılanları aktar
                     DEFAULT_EVENTS.forEach(ev => db.ref('events').push(ev));
                 }
                 renderPublicEvents();
@@ -342,32 +336,81 @@
             });
         }
 
-        // --- SUNUCU VERİLERİ (1 DAKİKALIK OTOMATİK GÜNCELLEME) ---
-        const servers = {
-            "105": { ip: "95.173.173.105", countId: "count_105", listId: "list_105" },
-            "14":  { ip: "95.173.173.14",  countId: "count_14",  listId: "list_14" },
-            "117": { ip: "95.173.173.117", countId: "count_117", listId: "list_117" }
-        };
+        // ================= CANLI AKTİFLİK SAAT SİSTEMİ =================
+        const mockPlayersPool = [
+            "DarkDaysC", "Mynameis", "Kemal", "siyasetgaming", "Efsane", "ProGamer",
+            "JailbreakKing", "Komutcu", "Cemil", "Mesut", "Sly", "Shadow", "Reis",
+            "VipPlayer", "RedBull", "Kobra", "Spectre", "Ghost", "Terminator",
+            "Alpha", "Bravo", "Delta", "SniperTr", "Baskan", "Kral", "Bomba",
+            "Headshot", "Scream", "Phantom", "Legend", "Aslan", "BordoBereli"
+        ];
 
-        function fetchLiveServerData() {
-            Object.keys(servers).forEach(key => {
-                const server = servers[key];
-                const mockPlayers = ["DarkDaysC", "Mynameis", "Kemal", "siyasetgaming", "Efsane", "ProGamer", "JailbreakKing", "Komutcu", "Oyuncu" + Math.floor(Math.random()*99), "Cemil", "Mesut", "Sly"];
-                const randomCount = Math.floor(Math.random() * 6) + 7; 
-                
-                document.getElementById(server.countId).innerText = randomCount;
-                const listEl = document.getElementById(server.listId);
-                listEl.innerHTML = '';
-                
-                for(let i=0; i < randomCount; i++) {
-                    listEl.innerHTML += `<div class="player-item" title="${mockPlayers[i % mockPlayers.length]}">👤 ${mockPlayers[i % mockPlayers.length]}</div>`;
-                }
-            });
+        function getDynamicCountForMainServers() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const timeVal = hour + (minute / 60);
+
+            // 1. Sabah (05:00 - 12:00) -> Max 10 (4 - 10 arası)
+            if (timeVal >= 5 && timeVal < 12) {
+                return Math.floor(Math.random() * 7) + 4;
+            }
+            // 2. Öğlen (12:00 - 18:00) -> 16 - 20 arası
+            else if (timeVal >= 12 && timeVal < 18) {
+                return Math.floor(Math.random() * 5) + 16;
+            }
+            // 3. Akşam (18:00 - 22:30) -> 20 - 32 arası git-gel
+            else if (timeVal >= 18 && timeVal < 22.5) {
+                return Math.floor(Math.random() * 13) + 20;
+            }
+            // 4. Gece (22:30 - 05:00) -> 13 - 18 arası
+            else {
+                return Math.floor(Math.random() * 6) + 13;
+            }
+        }
+
+        function updateLiveServers() {
+            // 105 ve 14 saatlik döngüye göre hesaplanır
+            const count105 = getDynamicCountForMainServers();
+            // 14 nolu sunucu da benzer ama ufak 1-2 kişi farklı doğal görünsün
+            let count14 = count105 + (Math.floor(Math.random() * 3) - 1);
+            if (count14 > 32) count14 = 32;
+            if (count14 < 4) count14 = 4;
+
+            // 117 Sabit 6 kişi
+            const count117 = 6;
+
+            // 105 Basımı
+            document.getElementById('count_105').innerText = count105;
+            const list105 = document.getElementById('list_105');
+            list105.innerHTML = '';
+            for (let i = 0; i < count105; i++) {
+                list105.innerHTML += `<div class="player-item" title="${mockPlayersPool[i % mockPlayersPool.length]}">👤 ${mockPlayersPool[i % mockPlayersPool.length]}</div>`;
+            }
+
+            // 14 Basımı
+            document.getElementById('count_14').innerText = count14;
+            const list14 = document.getElementById('list_14');
+            list14.innerHTML = '';
+            for (let i = 0; i < count14; i++) {
+                const pIndex = (i + 5) % mockPlayersPool.length;
+                list14.innerHTML += `<div class="player-item" title="${mockPlayersPool[pIndex]}">👤 ${mockPlayersPool[pIndex]}</div>`;
+            }
+
+            // 117 Basımı (Sabit 6)
+            document.getElementById('count_117').innerText = count117;
+            const list117 = document.getElementById('list_117');
+            list117.innerHTML = '';
+            for (let i = 0; i < count117; i++) {
+                const pIndex = (i + 12) % mockPlayersPool.length;
+                list117.innerHTML += `<div class="player-item" title="${mockPlayersPool[pIndex]}">👤 ${mockPlayersPool[pIndex]}</div>`;
+            }
         }
 
         window.onload = function() {
-            fetchLiveServerData();
-            setInterval(fetchLiveServerData, 60000); 
+            updateLiveServers();
+            setInterval(updateLiveServers, 60000); 
+            renderPublicEvents();
         };
 
         function copyIp(ipAddress) {
